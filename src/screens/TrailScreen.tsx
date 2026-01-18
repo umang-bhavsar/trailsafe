@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
     View,
     Text,
@@ -78,6 +78,15 @@ export function TrailScreen({ navigation, route }: TrailScreenProps) {
     const [hazardCount, setHazardCount] = useState<number>(0);
     const [aiSafetyScore, setAiSafetyScore] = useState<number | null>(null);
     const [aiSafetyLabel, setAiSafetyLabel] = useState<string | null>(null);
+    const aiFetchedRef = useRef(false);
+    const dataFetchedRef = useRef(false);
+
+    useEffect(() => {
+        aiFetchedRef.current = false;
+        dataFetchedRef.current = false;
+        setAiSafetyScore(null);
+        setAiSafetyLabel(null);
+    }, [trail.id]);
 
     const { getCurrentTime, demoMode, fastForwardTime } = useDemoMode();
     const { status, saveCheckIn, clearCheckIn, simulateOverdue } = useCheckIn();
@@ -137,7 +146,7 @@ export function TrailScreen({ navigation, route }: TrailScreenProps) {
         );
     };
 
-    const fetchData = useCallback(async () => {
+    const fetchRoute = useCallback(async () => {
         if (userLocation) {
             const routeData = await getWalkingRoute(
                 { latitude: userLocation.latitude, longitude: userLocation.longitude },
@@ -149,6 +158,11 @@ export function TrailScreen({ navigation, route }: TrailScreenProps) {
                 setRouteDuration(routeData.durationMin);
             }
         }
+    }, [userLocation, trail]);
+
+    const fetchStaticData = useCallback(async () => {
+        if (dataFetchedRef.current) return;
+        dataFetchedRef.current = true;
 
         const weather = await getWeather(trail.lat, trail.lng);
         if (weather) {
@@ -161,13 +175,20 @@ export function TrailScreen({ navigation, route }: TrailScreenProps) {
 
         const count = await getRecentHazardCount(trail.id);
         setHazardCount(count);
+    }, [trail]);
 
-        // AI safety score via OpenRouter (fallback to local if missing/failed)
+    const fetchAiScore = useCallback(async () => {
+        if (aiFetchedRef.current) return;
+        aiFetchedRef.current = true;
+
         try {
-            const sunsetTime = weather?.sunset || weatherState.sunset || safetyData.sunset;
+            const count = await getRecentHazardCount(trail.id);
+            const weather = await getWeather(trail.lat, trail.lng);
+            
+            const sunsetTime = weather?.sunset || getSunsetTime(new Date());
             const hoursUntilSunset = sunsetTime
                 ? Math.max(0, (sunsetTime.getTime() - Date.now()) / (1000 * 60 * 60))
-                : safetyData.hoursUntilSunset;
+                : 4; // fallback
 
             const ai = await fetchSafetyScoreFromAI({
                 locationName: trail.name,
@@ -175,19 +196,28 @@ export function TrailScreen({ navigation, route }: TrailScreenProps) {
                 distanceKm: trail.distanceKm,
                 hazardsLast48h: count,
                 hoursUntilSunset,
-                weather: weather?.condition || weatherState.condition || (safetyData.weather as string),
+                weather: weather?.condition || 'Clear',
             });
             setAiSafetyScore(ai.score);
             setAiSafetyLabel(ai.label);
         } catch (error) {
+            console.warn('AI safety score fetch failed, using local fallback', error);
             setAiSafetyScore(safetyData.score);
             setAiSafetyLabel(getSafetyScoreLabel(safetyData.score));
         }
-    }, [userLocation, trail, safetyData, weatherState]);
+    }, [trail, safetyData.score]);
 
     useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+        fetchRoute();
+    }, [fetchRoute]);
+
+    useEffect(() => {
+        fetchStaticData();
+    }, [fetchStaticData]);
+
+    useEffect(() => {
+        fetchAiScore();
+    }, [fetchAiScore]);
 
     if (!trail) {
         return (

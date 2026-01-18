@@ -14,7 +14,9 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { TrailCard, Trail } from '../components/TrailCard';
 import { colors, spacing, typography, borderRadius } from '../theme';
 import { useUserLocation } from '../context/LocationContext';
+import { useDemoMode } from '../context/DemoModeContext';
 import { searchNearbyTrails, calculateDistance } from '../services/placesApi';
+import { supabase } from '../services/supabase';
 import trailsData from '../data/trails.json';
 
 type RootStackParamList = {
@@ -30,7 +32,8 @@ type ExploreScreenProps = {
 
 export function ExploreScreen({ navigation }: ExploreScreenProps) {
     const [searchQuery, setSearchQuery] = useState('');
-    const [nearMeFilter, setNearMeFilter] = useState(true); // Default ON now
+    const [nearMeFilter, setNearMeFilter] = useState(true);
+    const [difficultyFilter, setDifficultyFilter] = useState<string | null>(null);
     const [refreshing, setRefreshing] = useState(false);
     const [googleTrails, setGoogleTrails] = useState<Trail[]>([]);
     const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
@@ -43,15 +46,19 @@ export function ExploreScreen({ navigation }: ExploreScreenProps) {
         refreshLocation,
     } = useUserLocation();
 
+    const { demoMode, toggleDemoMode, timeOffset } = useDemoMode();
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+    };
+
     const trails = trailsData as Trail[];
 
-    // Fetch nearby trails from Google when location is available
     useEffect(() => {
         if (userLocation && locationPermission === 'granted') {
             fetchNearbyTrails();
         }
     }, [userLocation, locationPermission]);
-
 
     const fetchNearbyTrails = async () => {
         if (!userLocation) return;
@@ -61,10 +68,9 @@ export function ExploreScreen({ navigation }: ExploreScreenProps) {
             const places = await searchNearbyTrails(
                 userLocation.latitude,
                 userLocation.longitude,
-                30000 // 30km radius
+                30000
             );
 
-            // Convert to Trail format
             const googleTrailsData = places.slice(0, 10).map((place, i) => ({
                 id: `google_${place.placeId}`,
                 name: place.name,
@@ -86,15 +92,12 @@ export function ExploreScreen({ navigation }: ExploreScreenProps) {
     };
 
     const filteredTrails = useMemo(() => {
-        // Combine local and Google trails
         let allTrails = [...trails];
 
-        // Add Google trails if we have user location
         if (googleTrails.length > 0) {
             allTrails = [...allTrails, ...googleTrails];
         }
 
-        // Filter by search query
         if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
             allTrails = allTrails.filter(trail =>
@@ -103,7 +106,10 @@ export function ExploreScreen({ navigation }: ExploreScreenProps) {
             );
         }
 
-        // Calculate distances
+        if (difficultyFilter) {
+            allTrails = allTrails.filter(trail => trail.difficulty === difficultyFilter);
+        }
+
         const userLat = userLocation?.latitude || 37.7749;
         const userLng = userLocation?.longitude || -122.4194;
 
@@ -112,13 +118,12 @@ export function ExploreScreen({ navigation }: ExploreScreenProps) {
             userDistance: calculateDistance(userLat, userLng, trail.lat, trail.lng),
         }));
 
-        // Sort by distance if "Near me" is active or if we have location
         if (nearMeFilter || userLocation) {
             trailsWithDistance.sort((a, b) => (a.userDistance || 0) - (b.userDistance || 0));
         }
 
         return trailsWithDistance;
-    }, [trails, googleTrails, searchQuery, nearMeFilter, userLocation]);
+    }, [trails, googleTrails, searchQuery, nearMeFilter, difficultyFilter, userLocation]);
 
     const onRefresh = async () => {
         setRefreshing(true);
@@ -136,16 +141,7 @@ export function ExploreScreen({ navigation }: ExploreScreenProps) {
     );
 
     const renderHeader = () => (
-        <>
-            <View style={styles.topBar}>
-                <View>
-                    <Text style={styles.screenTitle}>Explore Trails</Text>
-                    <Text style={styles.screenSubtitle}>
-                        {filteredTrails.length} trails available near you
-                    </Text>
-                </View>
-            </View>
-
+        <View style={styles.headerContent}>
             {/* Location Status */}
             {isLoadingLocation ? (
                 <View style={styles.locationBanner}>
@@ -165,9 +161,7 @@ export function ExploreScreen({ navigation }: ExploreScreenProps) {
             ) : userLocation ? (
                 <View style={[styles.locationBanner, styles.locationBannerSuccess]}>
                     <Text style={styles.locationIcon}>📍</Text>
-                    <Text style={styles.locationBannerText}>
-                        Showing trails near you
-                    </Text>
+                    <Text style={styles.locationBannerText}>Showing trails near you</Text>
                     {isLoadingGoogle && (
                         <ActivityIndicator size="small" color={colors.success} style={{ marginLeft: 8 }} />
                     )}
@@ -175,51 +169,42 @@ export function ExploreScreen({ navigation }: ExploreScreenProps) {
             ) : null}
 
             {/* Search Bar */}
-            <View style={styles.searchContainer}>
-                <View style={styles.searchInputContainer}>
-                    <Text style={styles.searchIcon}>🔍</Text>
-                    <TextInput
-                        style={styles.searchInput}
-                        placeholder="Search trails..."
-                        placeholderTextColor={colors.textSecondary}
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                    />
-                    {searchQuery.length > 0 && (
-                        <TouchableOpacity onPress={() => setSearchQuery('')}>
-                            <Text style={styles.clearIcon}>✕</Text>
-                        </TouchableOpacity>
-                    )}
-                </View>
+            <View style={styles.searchInputContainer}>
+                <Text style={styles.searchIcon}>🔍</Text>
+                <TextInput
+                    style={styles.searchInput}
+                    placeholder="Search trails..."
+                    placeholderTextColor={colors.textSecondary}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                />
+                {searchQuery.length > 0 && (
+                    <TouchableOpacity onPress={() => setSearchQuery('')}>
+                        <Text style={styles.clearIcon}>✕</Text>
+                    </TouchableOpacity>
+                )}
             </View>
 
             {/* Filters */}
             <View style={styles.filterRow}>
                 <TouchableOpacity
-                    style={[
-                        styles.filterPill,
-                        nearMeFilter && styles.filterPillActive,
-                        styles.filterPillPrimary,
-                    ]}
+                    style={[styles.filterPill, nearMeFilter && styles.filterPillActive]}
                     onPress={() => setNearMeFilter(!nearMeFilter)}
                 >
-                    <Text style={[
-                        styles.filterText,
-                        nearMeFilter && styles.filterTextActivePrimary,
-                    ]}>
+                    <Text style={[styles.filterText, nearMeFilter && styles.filterTextActive]}>
                         Near me
                     </Text>
                 </TouchableOpacity>
                 {['Easy', 'Moderate', 'Hard'].map(level => (
-                    <View
+                    <TouchableOpacity
                         key={level}
-                        style={[
-                            styles.filterPill,
-                            styles.difficultyPill,
-                        ]}
+                        style={[styles.filterPill, difficultyFilter === level && styles.filterPillActive]}
+                        onPress={() => setDifficultyFilter(difficultyFilter === level ? null : level)}
                     >
-                        <Text style={styles.filterText}>{level}</Text>
-                    </View>
+                        <Text style={[styles.filterText, difficultyFilter === level && styles.filterTextActive]}>
+                            {level}
+                        </Text>
+                    </TouchableOpacity>
                 ))}
             </View>
 
@@ -229,24 +214,43 @@ export function ExploreScreen({ navigation }: ExploreScreenProps) {
                     <Text style={styles.sectionSubtitle}>{googleTrails.length} trails via Google</Text>
                 </View>
             )}
-        </>
+        </View>
     );
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
-            <View style={styles.header}>
-                <Text style={styles.title}>Explore Trails</Text>
-                <Text style={styles.subtitle}>
-                    {filteredTrails.length} trails available
-                    {userLocation && ' near you'}
-                </Text>
-            </View>
-
             <FlatList
                 data={filteredTrails}
                 renderItem={renderTrail}
                 keyExtractor={item => item.id}
-                ListHeaderComponent={renderHeader}
+                ListHeaderComponent={
+                    <>
+                        <View style={styles.header}>
+                            <View style={styles.headerTop}>
+                                <View style={styles.headerTitles}>
+                                    <Text style={styles.title}>Explore Trails</Text>
+                                    <Text style={styles.subtitle}>
+                                        {filteredTrails.length} trails available{userLocation && ' near you'}
+                                    </Text>
+                                </View>
+                                <View style={styles.headerActions}>
+                                    <TouchableOpacity
+                                        style={[styles.headerButton, demoMode && styles.headerButtonActive]}
+                                        onPress={toggleDemoMode}
+                                    >
+                                        <Text style={styles.headerButtonText}>
+                                            {demoMode ? `🎮 +${timeOffset}m` : '🎮'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                                        <Text style={styles.logoutText}>Logout</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </View>
+                        {renderHeader()}
+                    </>
+                }
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
@@ -274,35 +278,62 @@ const styles = StyleSheet.create({
         backgroundColor: colors.background,
     },
     header: {
-        paddingHorizontal: spacing.lg,
-        paddingTop: spacing.md,
-        paddingBottom: spacing.sm,
+        paddingTop: spacing.sm,
+        paddingBottom: spacing.md,
+    },
+    headerTop: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+    },
+    headerTitles: {
+        flex: 1,
+    },
+    headerActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+    },
+    headerButton: {
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.xs,
+        borderRadius: 8,
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    headerButtonActive: {
+        backgroundColor: colors.accent + '30',
+        borderColor: colors.accent,
+    },
+    headerButtonText: {
+        fontSize: 14,
+        color: colors.textPrimary,
+    },
+    logoutButton: {
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.xs,
+    },
+    logoutText: {
+        fontSize: 14,
+        color: colors.textSecondary,
     },
     title: {
         ...typography.h1,
+        color: colors.textPrimary,
+        marginBottom: spacing.xs,
     },
     subtitle: {
         ...typography.bodySmall,
-        marginTop: spacing.xs,
-    },
-    topBar: {
-        paddingHorizontal: spacing.lg,
-        paddingTop: spacing.md,
-        paddingBottom: spacing.sm,
-    },
-    screenTitle: {
-        ...typography.h1,
-    },
-    screenSubtitle: {
-        ...typography.bodySmall,
         color: colors.textSecondary,
-        marginTop: spacing.xs,
+    },
+    headerContent: {
+        paddingTop: spacing.sm,
     },
     locationBanner: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: colors.surface,
-        marginHorizontal: spacing.lg,
         marginBottom: spacing.md,
         padding: spacing.md,
         borderRadius: borderRadius.md,
@@ -323,11 +354,8 @@ const styles = StyleSheet.create({
     },
     locationBannerText: {
         ...typography.bodySmall,
+        color: colors.textPrimary,
         flex: 1,
-    },
-    searchContainer: {
-        paddingHorizontal: spacing.lg,
-        paddingBottom: spacing.sm,
     },
     searchInputContainer: {
         flexDirection: 'row',
@@ -335,9 +363,9 @@ const styles = StyleSheet.create({
         backgroundColor: colors.surface,
         borderRadius: borderRadius.lg,
         paddingHorizontal: spacing.md,
-        marginBottom: spacing.sm,
         borderWidth: 1,
         borderColor: colors.border,
+        marginBottom: spacing.md,
     },
     searchIcon: {
         fontSize: 16,
@@ -358,33 +386,30 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.sm,
-        paddingHorizontal: spacing.lg,
-        marginBottom: spacing.md,
+        marginBottom: spacing.lg,
     },
     filterPill: {
         paddingVertical: spacing.sm,
         paddingHorizontal: spacing.md,
-        borderRadius: 999,
+        borderRadius: borderRadius.full,
         borderWidth: 1,
         borderColor: colors.border,
         backgroundColor: colors.surface,
     },
     filterPillActive: {
         borderColor: colors.accent,
-        backgroundColor: colors.accent + '20',
+        backgroundColor: colors.accent,
     },
-    filterPillPrimary: {},
-    difficultyPill: {},
     filterText: {
         ...typography.bodySmall,
         color: colors.textSecondary,
+        fontWeight: '500',
     },
-    filterTextActivePrimary: {
-        color: colors.accent,
+    filterTextActive: {
+        color: colors.white,
         fontWeight: '600',
     },
     sectionHeader: {
-        paddingHorizontal: spacing.lg,
         marginBottom: spacing.md,
     },
     sectionTitle: {
@@ -394,6 +419,7 @@ const styles = StyleSheet.create({
     },
     sectionSubtitle: {
         ...typography.bodySmall,
+        color: colors.textSecondary,
         marginTop: 2,
     },
     listContent: {
@@ -415,6 +441,7 @@ const styles = StyleSheet.create({
     },
     emptySubtext: {
         ...typography.bodySmall,
+        color: colors.textSecondary,
         marginTop: spacing.xs,
     },
 });

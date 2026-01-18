@@ -10,6 +10,8 @@ export const colors = {
   warning: '#FFC107',
   danger: '#F44336',
   border: '#333333',
+  white: '#FFFFFF',
+  black: '#000000',
 };
 
 export const spacing = {
@@ -80,4 +82,5 @@ export const borderRadius = {
   md: 12,
   lg: 16,
   xl: 24,
+  full: 9999,
 };

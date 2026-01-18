@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { LoginScreen } from '../screens/LoginScreen';
@@ -52,14 +52,6 @@ function DemoModeButton() {
     );
 }
 
-function LogoutButton({ onLogout }: { onLogout: () => void }) {
-    return (
-        <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
-            <Text style={styles.logoutButtonText}>Logout</Text>
-        </TouchableOpacity>
-    );
-}
-
 export function AppNavigator() {
     const [session, setSession] = useState<Session | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -86,10 +78,6 @@ export function AppNavigator() {
             authListener.subscription.unsubscribe();
         };
     }, []);
-
-    const handleLogout = async () => {
-        await supabase.auth.signOut();
-    };
 
     if (isLoading) {
         return null;
@@ -127,15 +115,7 @@ export function AppNavigator() {
                         <Stack.Screen
                             name="Explore"
                             component={ExploreScreen}
-                            options={{
-                                headerTitle: '',
-                                headerRight: () => (
-                                    <View style={styles.headerRight}>
-                                        <DemoModeButton />
-                                        <LogoutButton onLogout={handleLogout} />
-                                    </View>
-                                ),
-                            }}
+                            options={{ headerShown: false }}
                         />
                         <Stack.Screen
                             name="Trail"
@@ -161,11 +141,6 @@ export function AppNavigator() {
 }
 
 const styles = StyleSheet.create({
-    headerRight: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.sm,
-    },
     demoButton: {
         paddingHorizontal: spacing.sm,
         paddingVertical: spacing.xs,
@@ -181,13 +156,5 @@ const styles = StyleSheet.create({
     demoButtonText: {
         fontSize: 14,
         color: colors.textPrimary,
-    },
-    logoutButton: {
-        paddingHorizontal: spacing.sm,
-        paddingVertical: spacing.xs,
-    },
-    logoutButtonText: {
-        fontSize: 14,
-        color: colors.textSecondary,
     },
 });
