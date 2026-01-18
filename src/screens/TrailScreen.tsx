@@ -7,10 +7,11 @@ import {
     Modal,
     TouchableOpacity,
     Alert,
+    Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RouteProp, useFocusEffect } from '@react-navigation/native';
+import { RouteProp } from '@react-navigation/native';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { SafetyCard } from '../components/SafetyCard';
@@ -27,11 +28,9 @@ import { getRecentHazardCount } from '../services/hazards';
 import { fetchSafetyScoreFromAI } from '../services/safetyAi';
 import {
     getWeatherCondition,
-    getWeatherEmoji,
     getSunsetTime,
     formatTimeUntilSunset,
     getBusyness,
-    getBusynessColor,
     calculateSafetyScore,
     getSafetyScoreColor,
     getSafetyScoreLabel,
@@ -285,26 +284,26 @@ export function TrailScreen({ navigation, route }: TrailScreenProps) {
                     <Text style={styles.sectionTitle}>Safety Conditions</Text>
                     <View style={styles.safetyGrid}>
                         <SafetyCard
-                            icon={getWeatherEmoji(safetyData.weather)}
+                            iconSource={require('../../icons/Container - weather.png')}
                             title="WEATHER"
                             value={safetyData.weather}
                         />
                         <SafetyCard
-                            icon="🌅"
+                            iconSource={require('../../icons/Container - sunset.png')}
                             title="SUNSET"
                             value={formatTimeUntilSunset(safetyData.sunset, getCurrentTime())}
                         />
                     </View>
                     <View style={styles.safetyGrid}>
                         <SafetyCard
-                            icon="⚠️"
+                            iconSource={require('../../icons/Container - hazards.png')}
                             title="HAZARDS (48h)"
                             value={`${hazardCount}`}
                             valueColor={hazardCount > 0 ? colors.danger : colors.success}
                             subtitle={hazardCount > 0 ? 'Reported recently' : 'No recent reports'}
                         />
                         <SafetyCard
-                            icon="🛡️"
+                            iconSource={require('../../icons/Container - safety score.png')}
                             title="SAFETY SCORE"
                             value={`${(aiSafetyScore ?? safetyData.score).toFixed(1)}/10`}
                             valueColor={getSafetyScoreColor(aiSafetyScore ?? safetyData.score)}
@@ -324,9 +323,14 @@ export function TrailScreen({ navigation, route }: TrailScreenProps) {
                             }
                         >
                             <View style={styles.checkInHeader}>
-                                <Text style={styles.checkInIcon}>
-                                    {status.isOverdue ? '⚠️' : '✓'}
-                                </Text>
+                                <Image
+                                    source={
+                                        status.isOverdue
+                                            ? require('../../icons/Container - hazards.png')
+                                            : require('../../icons/Container - safety score.png')
+                                    }
+                                    style={styles.checkInIconImage}
+                                />
                                 <Text style={[
                                     styles.checkInStatusText,
                                     status.isOverdue && styles.checkInOverdueText,
@@ -534,9 +538,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: spacing.sm,
     },
-    checkInIcon: {
-        fontSize: 20,
+    checkInIconImage: {
+        width: 20,
+        height: 20,
         marginRight: spacing.sm,
+        resizeMode: 'contain',
     },
     checkInStatusText: {
         ...typography.caption,

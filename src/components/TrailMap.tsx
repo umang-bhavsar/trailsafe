@@ -5,6 +5,7 @@ import {
     StyleSheet,
     Platform,
     ActivityIndicator,
+    Image,
 } from 'react-native';
 import MapView, {
     Polyline,
@@ -110,7 +111,10 @@ export function TrailMap({
     if (!isGoogleMapsConfigured() && Platform.OS !== 'ios') {
         return (
             <View style={styles.fallbackContainer}>
-                <Text style={styles.fallbackIcon}>🗺️</Text>
+                <Image
+                    source={require('../../icons/location icon.png')}
+                    style={styles.fallbackIconImage}
+                />
                 <Text style={styles.fallbackTitle}>Map Not Configured</Text>
                 <Text style={styles.fallbackText}>
                     Add your Google Maps API key to .env
@@ -249,9 +253,11 @@ const styles = StyleSheet.create({
         padding: spacing.lg,
         borderRadius: borderRadius.lg,
     },
-    fallbackIcon: {
-        fontSize: 48,
+    fallbackIconImage: {
+        width: 48,
+        height: 48,
         marginBottom: spacing.md,
+        resizeMode: 'contain',
     },
     fallbackTitle: {
         ...typography.h3,

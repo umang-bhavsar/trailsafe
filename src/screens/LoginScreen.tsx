@@ -5,6 +5,7 @@ import {
     StyleSheet,
     KeyboardAvoidingView,
     Platform,
+    Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -55,7 +56,10 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
                 <View style={styles.content}>
                     <View style={styles.logoContainer}>
                         <View style={styles.logoBadge}>
-                            <Text style={styles.logoIcon}>⛰️</Text>
+                        <Image
+                            source={require('../../icons/Logo-png.png')}
+                            style={styles.logoImage}
+                        />
                         </View>
                         <Text style={styles.title}>TrailSafe</Text>
                         <Text style={styles.subtitle}>Your safety companion for every adventure</Text>
@@ -69,7 +73,6 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
                             keyboardType="email-address"
                             autoCapitalize="none"
                             autoCorrect={false}
-                            leftIcon={<Text style={styles.inputIcon}>✉️</Text>}
                             style={styles.inputText}
                         />
                         <Input
@@ -77,7 +80,6 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
                             value={password}
                             onChangeText={setPassword}
                             secureTextEntry
-                            leftIcon={<Text style={styles.inputIcon}>🔒</Text>}
                             style={styles.inputText}
                         />
 
@@ -123,8 +125,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: spacing.xxl,
     },
-    logoIcon: {
-        fontSize: 32,
+    logoImage: {
+        width: 36,
+        height: 36,
+        resizeMode: 'contain',
     },
     title: {
         ...typography.h1,
@@ -140,10 +144,6 @@ const styles = StyleSheet.create({
     },
     form: {
         width: '100%',
-    },
-    inputIcon: {
-        fontSize: 16,
-        color: colors.textSecondary,
     },
     inputText: {
         color: colors.textPrimary,

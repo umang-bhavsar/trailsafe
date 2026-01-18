@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import { Card } from './Card';
 import { colors, spacing, typography, borderRadius } from '../theme';
 
@@ -59,7 +59,10 @@ export function TrailCard({ trail, onPress, distance }: TrailCardProps) {
                     )}
                 </View>
                 <View style={styles.iconPill}>
-                    <Text style={styles.iconText}>🥾</Text>
+                    <Image
+                        source={require('../../icons/Login in - instead of console.png')}
+                        style={styles.iconImage}
+                    />
                 </View>
             </View>
         </Card>
@@ -119,7 +122,9 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: colors.border,
     },
-    iconText: {
-        fontSize: 24,
+    iconImage: {
+        width: 24,
+        height: 24,
+        resizeMode: 'contain',
     },
 });
