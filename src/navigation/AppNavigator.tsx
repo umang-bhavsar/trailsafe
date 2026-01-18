@@ -3,6 +3,7 @@ import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { LoginScreen } from '../screens/LoginScreen';
+import { SignUpScreen } from '../screens/SignUpScreen';
 import { ExploreScreen } from '../screens/ExploreScreen';
 import { TrailScreen } from '../screens/TrailScreen';
 import { HikeScreen } from '../screens/HikeScreen';
@@ -14,6 +15,7 @@ import { Session } from '@supabase/supabase-js';
 
 export type RootStackParamList = {
     Login: undefined;
+    SignUp: undefined;
     Explore: undefined;
     Trail: { trail: Trail };
     Hike: { trail: Trail };
@@ -108,11 +110,18 @@ export function AppNavigator() {
                 }}
             >
                 {!session ? (
-                    <Stack.Screen
-                        name="Login"
-                        component={LoginScreen}
-                        options={{ headerShown: false }}
-                    />
+                    <>
+                        <Stack.Screen
+                            name="Login"
+                            component={LoginScreen}
+                            options={{ headerShown: false }}
+                        />
+                        <Stack.Screen
+                            name="SignUp"
+                            component={SignUpScreen}
+                            options={{ headerShown: false }}
+                        />
+                    </>
                 ) : (
                     <>
                         <Stack.Screen

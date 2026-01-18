@@ -52,6 +52,7 @@ export function ExploreScreen({ navigation }: ExploreScreenProps) {
         }
     }, [userLocation, locationPermission]);
 
+
     const fetchNearbyTrails = async () => {
         if (!userLocation) return;
 

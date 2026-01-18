@@ -22,27 +22,46 @@ type RootStackParamList = {
     Hike: { trail: Trail };
 };
 
-type LoginScreenProps = {
-    navigation: NativeStackNavigationProp<RootStackParamList, 'Login'>;
+type SignUpScreenProps = {
+    navigation: NativeStackNavigationProp<RootStackParamList, 'SignUp'>;
 };
 
-export function LoginScreen({ navigation }: LoginScreenProps) {
+export function SignUpScreen({ navigation }: SignUpScreenProps) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [info, setInfo] = useState('');
 
-    const handleSignIn = async () => {
-        setLoading(true);
+    const handleSignUp = async () => {
         setError('');
-        const { error: signInError } = await supabase.auth.signInWithPassword({
+        setInfo('');
+
+        if (!email.trim() || !password) {
+            setError('Please fill in all fields.');
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            setError('Passwords do not match.');
+            return;
+        }
+
+        setLoading(true);
+        const { data, error: signUpError } = await supabase.auth.signUp({
             email: email.trim(),
             password,
         });
         setLoading(false);
 
-        if (signInError) {
-            setError(signInError.message);
+        if (signUpError) {
+            setError(signUpError.message);
+            return;
+        }
+
+        if (data.user && !data.session) {
+            setInfo('Check your email to confirm your account.');
         }
     };
 
@@ -55,8 +74,8 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
                 <View style={styles.content}>
                     <View style={styles.logoContainer}>
                         <Text style={styles.logoIcon}>🥾</Text>
-                        <Text style={styles.title}>TrailSafe</Text>
-                        <Text style={styles.subtitle}>Hike smarter. Stay safe.</Text>
+                        <Text style={styles.title}>Create your account</Text>
+                        <Text style={styles.subtitle}>TrailSafe</Text>
                     </View>
 
                     <View style={styles.form}>
@@ -71,30 +90,37 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
                         />
                         <Input
                             label="Password"
-                            placeholder="Enter password"
+                            placeholder="Create a password"
                             value={password}
                             onChangeText={setPassword}
                             secureTextEntry
                         />
-
-                        <Button
-                            title="Sign In"
-                            onPress={handleSignIn}
-                            loading={loading}
-                            size="large"
-                            style={styles.signInButton}
+                        <Input
+                            label="Retype password"
+                            placeholder="Confirm your password"
+                            value={confirmPassword}
+                            onChangeText={setConfirmPassword}
+                            secureTextEntry
                         />
 
                         <Button
                             title="Create Account"
-                            onPress={() => navigation.navigate('SignUp')}
+                            onPress={handleSignUp}
                             loading={loading}
                             size="large"
+                            style={styles.primaryButton}
+                        />
+
+                        <Button
+                            title="Back to Sign In"
+                            onPress={() => navigation.navigate('Login')}
                             variant="secondary"
-                            style={styles.signUpButton}
+                            size="large"
+                            style={styles.secondaryButton}
                         />
 
                         {!!error && <Text style={styles.errorText}>{error}</Text>}
+                        {!!info && <Text style={styles.infoText}>{info}</Text>}
                     </View>
                 </View>
             </KeyboardAvoidingView>
@@ -120,14 +146,13 @@ const styles = StyleSheet.create({
         marginBottom: spacing.xxl,
     },
     logoIcon: {
-        fontSize: 64,
+        fontSize: 56,
         marginBottom: spacing.md,
     },
     title: {
-        ...typography.h1,
-        fontSize: 40,
+        ...typography.h2,
         color: colors.textPrimary,
-        marginBottom: spacing.sm,
+        marginBottom: spacing.xs,
     },
     subtitle: {
         ...typography.body,
@@ -136,10 +161,10 @@ const styles = StyleSheet.create({
     form: {
         width: '100%',
     },
-    signInButton: {
+    primaryButton: {
         marginTop: spacing.md,
     },
-    signUpButton: {
+    secondaryButton: {
         marginTop: spacing.sm,
     },
     errorText: {
@@ -147,5 +172,11 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginTop: spacing.md,
         color: colors.danger,
+    },
+    infoText: {
+        ...typography.bodySmall,
+        textAlign: 'center',
+        marginTop: spacing.sm,
+        color: colors.textSecondary,
     },
 });
