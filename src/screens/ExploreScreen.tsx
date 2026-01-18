@@ -8,6 +8,7 @@ import {
     TouchableOpacity,
     RefreshControl,
     ActivityIndicator,
+    Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -153,14 +154,20 @@ export function ExploreScreen({ navigation }: ExploreScreenProps) {
                     style={[styles.locationBanner, styles.locationBannerError]}
                     onPress={requestLocationPermission}
                 >
-                    <Text style={styles.locationIcon}>📍</Text>
+                    <Image
+                        source={require('../../icons/location icon.png')}
+                        style={styles.locationIconImage}
+                    />
                     <Text style={styles.locationBannerText}>
                         Location denied. Tap to enable for nearby trails.
                     </Text>
                 </TouchableOpacity>
             ) : userLocation ? (
                 <View style={[styles.locationBanner, styles.locationBannerSuccess]}>
-                    <Text style={styles.locationIcon}>📍</Text>
+                    <Image
+                        source={require('../../icons/location icon.png')}
+                        style={styles.locationIconImage}
+                    />
                     <Text style={styles.locationBannerText}>Showing trails near you</Text>
                     {isLoadingGoogle && (
                         <ActivityIndicator size="small" color={colors.success} style={{ marginLeft: 8 }} />
@@ -170,7 +177,6 @@ export function ExploreScreen({ navigation }: ExploreScreenProps) {
 
             {/* Search Bar */}
             <View style={styles.searchInputContainer}>
-                <Text style={styles.searchIcon}>🔍</Text>
                 <TextInput
                     style={styles.searchInput}
                     placeholder="Search trails..."
@@ -238,9 +244,13 @@ export function ExploreScreen({ navigation }: ExploreScreenProps) {
                                         style={[styles.headerButton, demoMode && styles.headerButtonActive]}
                                         onPress={toggleDemoMode}
                                     >
-                                        <Text style={styles.headerButtonText}>
-                                            {demoMode ? `🎮 +${timeOffset}m` : '🎮'}
-                                        </Text>
+                                        <Image
+                                            source={require('../../icons/Login in - instead of console.png')}
+                                            style={styles.headerIconImage}
+                                        />
+                                        {demoMode && (
+                                            <Text style={styles.headerButtonText}>+{timeOffset}m</Text>
+                                        )}
                                     </TouchableOpacity>
                                     <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
                                         <Text style={styles.logoutText}>Logout</Text>
@@ -262,7 +272,10 @@ export function ExploreScreen({ navigation }: ExploreScreenProps) {
                 }
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyIcon}>🏔️</Text>
+                        <Image
+                            source={require('../../icons/Logo-png.png')}
+                            style={styles.emptyIconImage}
+                        />
                         <Text style={styles.emptyText}>No trails found</Text>
                         <Text style={styles.emptySubtext}>Try a different search term</Text>
                     </View>
@@ -301,6 +314,9 @@ const styles = StyleSheet.create({
         backgroundColor: colors.surface,
         borderWidth: 1,
         borderColor: colors.border,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.xs,
     },
     headerButtonActive: {
         backgroundColor: colors.accent + '30',
@@ -309,6 +325,11 @@ const styles = StyleSheet.create({
     headerButtonText: {
         fontSize: 14,
         color: colors.textPrimary,
+    },
+    headerIconImage: {
+        width: 18,
+        height: 18,
+        resizeMode: 'contain',
     },
     logoutButton: {
         paddingHorizontal: spacing.sm,
@@ -348,9 +369,11 @@ const styles = StyleSheet.create({
         borderColor: colors.warning + '40',
         backgroundColor: colors.warning + '10',
     },
-    locationIcon: {
-        fontSize: 16,
+    locationIconImage: {
+        width: 16,
+        height: 16,
         marginRight: spacing.sm,
+        resizeMode: 'contain',
     },
     locationBannerText: {
         ...typography.bodySmall,
@@ -366,10 +389,6 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: colors.border,
         marginBottom: spacing.md,
-    },
-    searchIcon: {
-        fontSize: 16,
-        marginRight: spacing.sm,
     },
     searchInput: {
         flex: 1,
@@ -431,9 +450,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingVertical: spacing.xxl * 2,
     },
-    emptyIcon: {
-        fontSize: 48,
+    emptyIconImage: {
+        width: 48,
+        height: 48,
         marginBottom: spacing.md,
+        resizeMode: 'contain',
     },
     emptyText: {
         ...typography.h3,

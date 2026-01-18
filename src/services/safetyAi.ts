@@ -18,6 +18,35 @@ export interface SafetyAIResult {
 
 const MODEL = 'google/gemini-2.5-pro'; // available on OpenRouter
 const ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
+const SYSTEM_PROMPT = 'Return ONLY a JSON object with keys {"score": number 0-10, "label": "Excellent|Good|Fair|Caution|Dangerous"}. No markdown, no code fences, no extra text.';
+
+function extractJsonPayload(text: string): string {
+    const trimmed = text.trim();
+    const fencedMatch = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+    if (fencedMatch?.[1]) {
+        return fencedMatch[1].trim();
+    }
+    return trimmed;
+}
+
+function parseSafetyJson(text: string): { score: number; label: string } {
+    const cleaned = extractJsonPayload(text);
+
+    if (!cleaned || cleaned === '{') {
+        throw new Error('OpenRouter returned incomplete JSON');
+    }
+
+    try {
+        return JSON.parse(cleaned);
+    } catch {
+        const jsonStart = cleaned.indexOf('{');
+        const jsonEnd = cleaned.lastIndexOf('}');
+        if (jsonStart !== -1 && jsonEnd > jsonStart) {
+            return JSON.parse(cleaned.slice(jsonStart, jsonEnd + 1));
+        }
+        throw new Error('OpenRouter invalid JSON payload');
+    }
+}
 
 export async function fetchSafetyScoreFromAI(input: SafetyAIInput): Promise<SafetyAIResult> {
     if (!OPENROUTER_API_KEY) {
@@ -55,12 +84,16 @@ Input:
         model: MODEL,
         messages: [
             {
+                role: 'system',
+                content: SYSTEM_PROMPT,
+            },
+            {
                 role: 'user',
                 content: prompt,
             },
         ],
-        temperature: 0.3,
-        max_tokens: 128,
+        temperature: 0,
+        max_tokens: 256,
     };
 
     try {
@@ -82,16 +115,19 @@ Input:
 
         const data = await res.json();
         console.log('OpenRouter raw response', JSON.stringify(data, null, 2));
-        const text = data?.choices?.[0]?.message?.content;
+        const choice = data?.choices?.[0];
+        const finishReason = choice?.finish_reason;
+        const nativeFinishReason = choice?.native_finish_reason;
+        if (finishReason === 'length' || nativeFinishReason === 'MAX_TOKENS') {
+            throw new Error('OpenRouter response truncated');
+        }
+
+        const text = choice?.message?.content;
         if (!text) {
             throw new Error('OpenRouter empty response');
         }
 
-        // Attempt to parse JSON from the response
-        const jsonStart = text.indexOf('{');
-        const jsonEnd = text.lastIndexOf('}');
-        const jsonText = jsonStart !== -1 && jsonEnd !== -1 ? text.slice(jsonStart, jsonEnd + 1) : text;
-        const parsed = JSON.parse(jsonText);
+        const parsed = parseSafetyJson(text);
 
         const score = typeof parsed.score === 'number' ? parsed.score : NaN;
         const label = typeof parsed.label === 'string' ? parsed.label : '';

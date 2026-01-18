@@ -1,20 +1,20 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image, ImageSourcePropType } from 'react-native';
 import { Card } from './Card';
 import { colors, spacing, typography } from '../theme';
 
 interface SafetyCardProps {
-    icon: string;
+    iconSource: ImageSourcePropType;
     title: string;
     value: string;
     valueColor?: string;
     subtitle?: string;
 }
 
-export function SafetyCard({ icon, title, value, valueColor, subtitle }: SafetyCardProps) {
+export function SafetyCard({ iconSource, title, value, valueColor, subtitle }: SafetyCardProps) {
     return (
         <Card style={styles.card}>
-            <Text style={styles.icon}>{icon}</Text>
+            <Image source={iconSource} style={styles.iconImage} />
             <Text style={styles.title}>{title}</Text>
             <Text style={[styles.value, valueColor ? { color: valueColor } : null]}>
                 {value}
@@ -31,9 +31,11 @@ const styles = StyleSheet.create({
         padding: spacing.md,
         minWidth: 100,
     },
-    icon: {
-        fontSize: 28,
+    iconImage: {
+        width: 28,
+        height: 28,
         marginBottom: spacing.xs,
+        resizeMode: 'contain',
     },
     title: {
         ...typography.caption,

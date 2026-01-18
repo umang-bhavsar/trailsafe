@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, Image } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { LoginScreen } from '../screens/LoginScreen';
@@ -45,9 +45,11 @@ function DemoModeButton() {
             style={[styles.demoButton, demoMode && styles.demoButtonActive]}
             onPress={toggleDemoMode}
         >
-            <Text style={styles.demoButtonText}>
-                {demoMode ? `🎮 +${timeOffset}m` : '🎮'}
-            </Text>
+            <Image
+                source={require('../../icons/Login in - instead of console.png')}
+                style={styles.demoButtonIcon}
+            />
+            {demoMode && <Text style={styles.demoButtonText}>+{timeOffset}m</Text>}
         </TouchableOpacity>
     );
 }
@@ -148,6 +150,9 @@ const styles = StyleSheet.create({
         backgroundColor: colors.surface,
         borderWidth: 1,
         borderColor: colors.border,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.xs,
     },
     demoButtonActive: {
         backgroundColor: colors.accent + '30',
@@ -156,5 +161,10 @@ const styles = StyleSheet.create({
     demoButtonText: {
         fontSize: 14,
         color: colors.textPrimary,
+    },
+    demoButtonIcon: {
+        width: 18,
+        height: 18,
+        resizeMode: 'contain',
     },
 });
