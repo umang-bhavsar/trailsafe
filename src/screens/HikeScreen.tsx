@@ -289,18 +289,8 @@ export function HikeScreen({ navigation, route }: HikeScreenProps) {
     }
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={styles.container} edges={['bottom']}>
             <View style={styles.content}>
-                <View style={styles.topBar}>
-                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.pill}>
-                        <Text style={styles.pillText}>◀ Trail Details</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.topTitle}>Active Hike</Text>
-                    <TouchableOpacity style={styles.iconPill}>
-                        <Text style={styles.pillText}>🎮</Text>
-                    </TouchableOpacity>
-                </View>
-
                 {/* Map */}
                 <View style={styles.mapContainer}>
                     <TrailMap
@@ -514,39 +504,6 @@ const styles = StyleSheet.create({
         color: colors.accent,
         marginBottom: spacing.sm,
         textAlign: 'center',
-    },
-    topBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: spacing.md,
-        paddingTop: spacing.md,
-        paddingBottom: spacing.sm,
-    },
-    pill: {
-        paddingVertical: spacing.sm,
-        paddingHorizontal: spacing.md,
-        borderRadius: 16,
-        backgroundColor: colors.surface,
-        borderWidth: 1,
-        borderColor: colors.border,
-    },
-    pillText: {
-        ...typography.bodySmall,
-        color: colors.textPrimary,
-    },
-    iconPill: {
-        paddingVertical: spacing.sm,
-        paddingHorizontal: spacing.sm + 4,
-        borderRadius: 16,
-        backgroundColor: colors.surface,
-        borderWidth: 1,
-        borderColor: colors.border,
-    },
-    topTitle: {
-        ...typography.body,
-        color: colors.textPrimary,
-        fontWeight: '700',
     },
     errorContainer: {
         flex: 1,
