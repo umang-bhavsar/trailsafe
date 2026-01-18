@@ -58,11 +58,34 @@ export function useLocation() {
             // Load existing points
             const existingPoints = await getItem<BreadcrumbPoint[]>(StorageKeys.BREADCRUMBS) || [];
 
+            // Seed with current position to ensure we start with a fix immediately
+            try {
+                const current = await Location.getCurrentPositionAsync({
+                    accuracy: Location.Accuracy.BestForNavigation,
+                    mayShowUserSettingsDialog: true,
+                });
+                const seedPoint: BreadcrumbPoint = {
+                    lat: current.coords.latitude,
+                    lng: current.coords.longitude,
+                    ts: Date.now(),
+                };
+                if (existingPoints.length === 0 || (
+                    existingPoints[existingPoints.length - 1].lat !== seedPoint.lat ||
+                    existingPoints[existingPoints.length - 1].lng !== seedPoint.lng
+                )) {
+                    existingPoints.push(seedPoint);
+                    await setItem(StorageKeys.BREADCRUMBS, existingPoints);
+                }
+            } catch (seedError) {
+                console.warn('Seeding location failed', seedError);
+            }
+
             subscriptionRef.current = await Location.watchPositionAsync(
                 {
-                    accuracy: Location.Accuracy.High,
-                    timeInterval: 5000,
-                    distanceInterval: 5,
+                    accuracy: Location.Accuracy.BestForNavigation,
+                    timeInterval: 2000,
+                    distanceInterval: 0,
+                    mayShowUserSettingsDialog: true,
                 },
                 async (location) => {
                     const newPoint: BreadcrumbPoint = {

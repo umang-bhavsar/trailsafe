@@ -73,35 +73,42 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
             >
                 <View style={styles.content}>
                     <View style={styles.logoContainer}>
-                        <Text style={styles.logoIcon}>🥾</Text>
-                        <Text style={styles.title}>Create your account</Text>
-                        <Text style={styles.subtitle}>TrailSafe</Text>
+                        <View style={styles.logoBadge}>
+                            <Text style={styles.logoIcon}>⛰️</Text>
+                        </View>
+                        <Text style={styles.title}>Sign Up</Text>
+                        <Text style={styles.subtitle}>Make an account with us today!</Text>
                     </View>
 
                     <View style={styles.form}>
                         <Input
-                            label="Email"
-                            placeholder="your@email.com"
+                            placeholder="enter your email"
                             value={email}
                             onChangeText={setEmail}
                             keyboardType="email-address"
                             autoCapitalize="none"
                             autoCorrect={false}
+                            leftIcon={<Text style={styles.inputIcon}>✉️</Text>}
+                            style={styles.inputText}
                         />
                         <Input
-                            label="Password"
-                            placeholder="Create a password"
+                            placeholder="set up a password"
                             value={password}
                             onChangeText={setPassword}
                             secureTextEntry
+                            leftIcon={<Text style={styles.inputIcon}>🔒</Text>}
+                            style={styles.inputText}
                         />
                         <Input
-                            label="Retype password"
-                            placeholder="Confirm your password"
+                            placeholder="retype password"
                             value={confirmPassword}
                             onChangeText={setConfirmPassword}
                             secureTextEntry
+                            leftIcon={<Text style={styles.inputIcon}>🔒</Text>}
+                            style={styles.inputText}
                         />
+
+                        <Text style={styles.forgot}>Forgot password?</Text>
 
                         <Button
                             title="Create Account"
@@ -112,7 +119,7 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
                         />
 
                         <Button
-                            title="Back to Sign In"
+                            title="Sign In"
                             onPress={() => navigation.navigate('Login')}
                             variant="secondary"
                             size="large"
@@ -146,26 +153,33 @@ const styles = StyleSheet.create({
         marginBottom: spacing.xxl,
     },
     logoIcon: {
-        fontSize: 56,
-        marginBottom: spacing.md,
+        fontSize: 32,
     },
     title: {
-        ...typography.h2,
+        ...typography.h1,
+        fontSize: 36,
         color: colors.textPrimary,
-        marginBottom: spacing.xs,
+        marginTop: spacing.md,
     },
     subtitle: {
         ...typography.body,
         color: colors.textSecondary,
+        textAlign: 'center',
+        marginTop: spacing.xs,
     },
     form: {
         width: '100%',
     },
     primaryButton: {
-        marginTop: spacing.md,
+        marginTop: spacing.sm,
+        borderRadius: 24,
+        paddingVertical: spacing.lg,
     },
     secondaryButton: {
         marginTop: spacing.sm,
+    },
+    secondaryButtonText: {
+        color: colors.textPrimary,
     },
     errorText: {
         ...typography.bodySmall,
@@ -178,5 +192,30 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginTop: spacing.sm,
         color: colors.textSecondary,
+    },
+    inputIcon: {
+        fontSize: 16,
+        color: colors.textSecondary,
+    },
+    inputText: {
+        color: colors.textPrimary,
+        fontSize: 16,
+    },
+    forgot: {
+        ...typography.bodySmall,
+        color: colors.accent,
+        textAlign: 'right',
+        marginTop: -spacing.sm,
+        marginBottom: spacing.md,
+    },
+    logoBadge: {
+        width: 64,
+        height: 64,
+        borderRadius: 16,
+        backgroundColor: colors.surface,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: colors.border,
     },
 });

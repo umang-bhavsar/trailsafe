@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -16,6 +16,11 @@ import { Trail } from '../components/TrailCard';
 import { colors, spacing, typography, borderRadius } from '../theme';
 import { useLocation } from '../hooks/useLocation';
 import { useDemoMode } from '../context/DemoModeContext';
+import { useUserLocation } from '../context/LocationContext';
+import { getWalkingRoute } from '../services/googleRoutes';
+import { startHike, recordHikePoint, endHike } from '../services/hikes';
+import { useCheckIn } from '../hooks/useCheckIn';
+import { reportHazard } from '../services/hazards';
 
 type RootStackParamList = {
     Login: undefined;
@@ -35,6 +40,10 @@ export function HikeScreen({ navigation, route }: HikeScreenProps) {
     const [isHiking, setIsHiking] = useState(false);
     const [elapsedTime, setElapsedTime] = useState(0);
     const [startTime, setStartTime] = useState<number | null>(null);
+    const [hikeId, setHikeId] = useState<string | null>(null);
+    const [isStarting, setIsStarting] = useState(false);
+    const [isReporting, setIsReporting] = useState(false);
+    const lastUploadedTsRef = useRef<number | null>(null);
 
     const {
         points,
@@ -49,6 +58,9 @@ export function HikeScreen({ navigation, route }: HikeScreenProps) {
     } = useLocation();
 
     const { demoMode, addSimulatedPoints } = useDemoMode();
+    const { userLocation } = useUserLocation();
+    const { status } = useCheckIn();
+    const [routeLine, setRouteLine] = useState<{ latitude: number; longitude: number }[]>([]);
 
     useEffect(() => {
         loadSavedPoints();
@@ -95,16 +107,72 @@ export function HikeScreen({ navigation, route }: HikeScreenProps) {
     };
 
     const handleStartHike = async () => {
+        if (!status.data || status.data.trailId !== trail.id) {
+            Alert.alert(
+                'Check-in required',
+                'Please set a safety check-in on the trail details page before starting your hike.'
+            );
+            return;
+        }
+
+        setIsReporting(false);
+        setIsStarting(true);
         const started = await startTracking();
-        if (started) {
-            setIsHiking(true);
-            setStartTime(Date.now());
-            setElapsedTime(0);
-        } else {
+        if (!started) {
+            setIsStarting(false);
             Alert.alert(
                 'Location Permission Required',
                 'Please enable location services to track your hike.'
             );
+            return;
+        }
+
+        try {
+            const expectedReturnAt = new Date(status.data.expectedReturnTime).toISOString();
+            const newHikeId = await startHike({
+                trailId: trail.id,
+                emergencyEmail: status.data.contactInfo,
+                expectedReturnAt,
+            });
+
+            setHikeId(newHikeId);
+            setIsHiking(true);
+            setStartTime(Date.now());
+            setElapsedTime(0);
+            lastUploadedTsRef.current = null;
+        } catch (error) {
+            stopTracking();
+            setIsHiking(false);
+            setStartTime(null);
+            Alert.alert('Unable to start hike', error instanceof Error ? error.message : 'Try again.');
+        } finally {
+            setIsStarting(false);
+        }
+    };
+
+    const handleReportHazard = async () => {
+        if (!status.data || status.data.trailId !== trail.id) {
+            Alert.alert('Check-in required', 'Set a safety check-in on the trail page before reporting hazards.');
+            return;
+        }
+
+        const loc = lastPoint
+            ? { latitude: lastPoint.lat, longitude: lastPoint.lng }
+            : userLocation
+                ? { latitude: userLocation.latitude, longitude: userLocation.longitude }
+                : null;
+
+        setIsReporting(true);
+        try {
+            await reportHazard({
+                trailId: trail.id,
+                location: loc || undefined,
+            });
+            Alert.alert('Hazard reported', 'Thanks for keeping others safe.');
+        } catch (error) {
+            Alert.alert('Failed to report', error instanceof Error ? error.message : 'Try again.');
+        } finally {
+            setIsReporting(false);
         }
     };
 
@@ -116,12 +184,20 @@ export function HikeScreen({ navigation, route }: HikeScreenProps) {
                 { text: 'Cancel', style: 'cancel' },
                 {
                     text: 'End Hike',
-                    onPress: () => {
+                    onPress: async () => {
                         stopTracking();
                         setIsHiking(false);
                         setStartTime(null);
+                        if (hikeId) {
+                            try {
+                                await endHike(hikeId);
+                            } catch (error) {
+                                console.warn('Failed to end hike:', error);
+                            }
+                        }
+                        setHikeId(null);
                         navigation.goBack();
-                    }
+                    },
                 },
             ]
         );
@@ -160,6 +236,48 @@ export function HikeScreen({ navigation, route }: HikeScreenProps) {
         setPoints(newPoints);
     };
 
+    useEffect(() => {
+        const fetchRoute = async () => {
+            if (!userLocation) return;
+            const routeData = await getWalkingRoute(
+                { latitude: userLocation.latitude, longitude: userLocation.longitude },
+                { latitude: trail.lat, longitude: trail.lng }
+            );
+            if (routeData?.coordinates?.length) {
+                setRouteLine(routeData.coordinates);
+            }
+        };
+        fetchRoute();
+    }, [userLocation, trail.lat, trail.lng]);
+
+    useEffect(() => {
+        if (!isTracking || !hikeId || !lastPoint) return;
+        if (lastUploadedTsRef.current === null) {
+            recordHikePoint(hikeId, lastPoint)
+                .then(() => {
+                    lastUploadedTsRef.current = lastPoint.ts;
+                })
+                .catch(error => console.warn('Failed to upload point:', error));
+        }
+    }, [isTracking, hikeId, lastPoint]);
+
+    useEffect(() => {
+        if (!isTracking || !hikeId) return;
+
+        const interval = setInterval(() => {
+            if (!lastPoint) return;
+            if (lastUploadedTsRef.current === lastPoint.ts) return;
+
+            recordHikePoint(hikeId, lastPoint)
+                .then(() => {
+                    lastUploadedTsRef.current = lastPoint.ts;
+                })
+                .catch(error => console.warn('Failed to upload point:', error));
+        }, 60000);
+
+        return () => clearInterval(interval);
+    }, [isTracking, hikeId, lastPoint]);
+
     if (!trail) {
         return (
             <SafeAreaView style={styles.container}>
@@ -173,6 +291,16 @@ export function HikeScreen({ navigation, route }: HikeScreenProps) {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.content}>
+                <View style={styles.topBar}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.pill}>
+                        <Text style={styles.pillText}>◀ Trail Details</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.topTitle}>Active Hike</Text>
+                    <TouchableOpacity style={styles.iconPill}>
+                        <Text style={styles.pillText}>🎮</Text>
+                    </TouchableOpacity>
+                </View>
+
                 {/* Map */}
                 <View style={styles.mapContainer}>
                     <TrailMap
@@ -182,6 +310,7 @@ export function HikeScreen({ navigation, route }: HikeScreenProps) {
                         showUserLocation={true}
                         mapType="terrain"
                         centerOnUser={isHiking}
+                        routeLine={routeLine}
                     />
                 </View>
 
@@ -206,7 +335,6 @@ export function HikeScreen({ navigation, route }: HikeScreenProps) {
                         </View>
                     </Card>
 
-                    {/* Last Position */}
                     {lastPoint && (
                         <View style={styles.lastPosition}>
                             <Text style={styles.lastPositionLabel}>Last position:</Text>
@@ -218,12 +346,24 @@ export function HikeScreen({ navigation, route }: HikeScreenProps) {
 
                     {/* Actions */}
                     <View style={styles.actions}>
+                        <Button
+                            title="Report a Hazard"
+                            onPress={handleReportHazard}
+                            variant="secondary"
+                            size="medium"
+                            style={styles.hazardButton}
+                            loading={isReporting}
+                            disabled={isReporting}
+                        />
+
                         {!isHiking ? (
                             <Button
                                 title="Start Tracking"
                                 onPress={handleStartHike}
+                                loading={isStarting}
                                 size="large"
-                                style={styles.actionButton}
+                                style={styles.primaryButton}
+                                disabled={isStarting}
                             />
                         ) : (
                             <View style={styles.hikingActions}>
@@ -232,14 +372,14 @@ export function HikeScreen({ navigation, route }: HikeScreenProps) {
                                     onPress={handlePauseResume}
                                     variant="secondary"
                                     size="large"
-                                    style={styles.halfButton}
+                                    style={styles.pillButton}
                                 />
                                 <Button
                                     title="End Hike"
                                     onPress={handleEndHike}
                                     variant="danger"
                                     size="large"
-                                    style={styles.halfButton}
+                                    style={styles.endButton}
                                 />
                             </View>
                         )}
@@ -254,7 +394,6 @@ export function HikeScreen({ navigation, route }: HikeScreenProps) {
                             />
                         )}
 
-                        {/* Demo Mode Controls */}
                         {demoMode && (
                             <View style={styles.demoControls}>
                                 <Text style={styles.demoLabel}>DEMO MODE</Text>
@@ -285,14 +424,19 @@ const styles = StyleSheet.create({
         flex: 1,
         margin: spacing.md,
         marginBottom: 0,
-        borderRadius: borderRadius.lg,
+        borderRadius: 24,
         overflow: 'hidden',
+        backgroundColor: '#0b1b32',
+        borderWidth: 1,
+        borderColor: colors.border,
     },
     statsPanel: {
         padding: spacing.md,
     },
     statsCard: {
         marginBottom: spacing.md,
+        backgroundColor: colors.surface,
+        borderRadius: 16,
     },
     statsRow: {
         flexDirection: 'row',
@@ -335,6 +479,13 @@ const styles = StyleSheet.create({
     actions: {
         gap: spacing.md,
     },
+    hazardButton: {
+        borderRadius: 20,
+    },
+    primaryButton: {
+        borderRadius: 24,
+        paddingVertical: spacing.lg,
+    },
     actionButton: {
         width: '100%',
     },
@@ -342,8 +493,13 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: spacing.md,
     },
-    halfButton: {
+    pillButton: {
         flex: 1,
+        borderRadius: 20,
+    },
+    endButton: {
+        flex: 1,
+        borderRadius: 20,
     },
     demoControls: {
         marginTop: spacing.sm,
@@ -358,6 +514,39 @@ const styles = StyleSheet.create({
         color: colors.accent,
         marginBottom: spacing.sm,
         textAlign: 'center',
+    },
+    topBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: spacing.md,
+        paddingTop: spacing.md,
+        paddingBottom: spacing.sm,
+    },
+    pill: {
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.md,
+        borderRadius: 16,
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    pillText: {
+        ...typography.bodySmall,
+        color: colors.textPrimary,
+    },
+    iconPill: {
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.sm + 4,
+        borderRadius: 16,
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    topTitle: {
+        ...typography.body,
+        color: colors.textPrimary,
+        fontWeight: '700',
     },
     errorContainer: {
         flex: 1,
