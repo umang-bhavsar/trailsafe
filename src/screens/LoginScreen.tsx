@@ -54,45 +54,49 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
             >
                 <View style={styles.content}>
                     <View style={styles.logoContainer}>
-                        <Text style={styles.logoIcon}>🥾</Text>
+                        <View style={styles.logoBadge}>
+                            <Text style={styles.logoIcon}>⛰️</Text>
+                        </View>
                         <Text style={styles.title}>TrailSafe</Text>
-                        <Text style={styles.subtitle}>Hike smarter. Stay safe.</Text>
+                        <Text style={styles.subtitle}>Your safety companion for every adventure</Text>
                     </View>
 
                     <View style={styles.form}>
                         <Input
-                            label="Email"
-                            placeholder="your@email.com"
+                            placeholder="enter your email"
                             value={email}
                             onChangeText={setEmail}
                             keyboardType="email-address"
                             autoCapitalize="none"
                             autoCorrect={false}
+                            leftIcon={<Text style={styles.inputIcon}>✉️</Text>}
+                            style={styles.inputText}
                         />
                         <Input
-                            label="Password"
-                            placeholder="Enter password"
+                            placeholder="set up a password"
                             value={password}
                             onChangeText={setPassword}
                             secureTextEntry
+                            leftIcon={<Text style={styles.inputIcon}>🔒</Text>}
+                            style={styles.inputText}
                         />
+
+                        <Text style={styles.forgot}>Forgot password?</Text>
 
                         <Button
                             title="Sign In"
                             onPress={handleSignIn}
                             loading={loading}
                             size="large"
-                            style={styles.signInButton}
+                            style={styles.primaryButton}
                         />
 
-                        <Button
-                            title="Create Account"
-                            onPress={() => navigation.navigate('SignUp')}
-                            loading={loading}
-                            size="large"
-                            variant="secondary"
-                            style={styles.signUpButton}
-                        />
+                        <Text style={styles.signupLink}>
+                            Don't have an account?{' '}
+                            <Text style={styles.signupLinkHighlight} onPress={() => navigation.navigate('SignUp')}>
+                                Sign up
+                            </Text>
+                        </Text>
 
                         {!!error && <Text style={styles.errorText}>{error}</Text>}
                     </View>
@@ -120,32 +124,67 @@ const styles = StyleSheet.create({
         marginBottom: spacing.xxl,
     },
     logoIcon: {
-        fontSize: 64,
-        marginBottom: spacing.md,
+        fontSize: 32,
     },
     title: {
         ...typography.h1,
-        fontSize: 40,
+        fontSize: 36,
         color: colors.textPrimary,
-        marginBottom: spacing.sm,
+        marginTop: spacing.md,
     },
     subtitle: {
         ...typography.body,
         color: colors.textSecondary,
+        textAlign: 'center',
+        marginTop: spacing.xs,
     },
     form: {
         width: '100%',
     },
-    signInButton: {
-        marginTop: spacing.md,
+    inputIcon: {
+        fontSize: 16,
+        color: colors.textSecondary,
     },
-    signUpButton: {
+    inputText: {
+        color: colors.textPrimary,
+        fontSize: 16,
+    },
+    forgot: {
+        ...typography.bodySmall,
+        color: colors.accent,
+        textAlign: 'right',
+        marginTop: -spacing.sm,
+        marginBottom: spacing.md,
+    },
+    primaryButton: {
         marginTop: spacing.sm,
+        borderRadius: 24,
+        paddingVertical: spacing.lg,
     },
     errorText: {
         ...typography.bodySmall,
         textAlign: 'center',
         marginTop: spacing.md,
         color: colors.danger,
+    },
+    signupLink: {
+        ...typography.bodySmall,
+        textAlign: 'center',
+        marginTop: spacing.lg,
+        color: colors.textSecondary,
+    },
+    signupLinkHighlight: {
+        color: colors.accent,
+        fontWeight: '600',
+    },
+    logoBadge: {
+        width: 64,
+        height: 64,
+        borderRadius: 16,
+        backgroundColor: colors.surface,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: colors.border,
     },
 });

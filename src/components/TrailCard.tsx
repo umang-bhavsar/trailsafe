@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Card } from './Card';
 import { colors, spacing, typography, borderRadius } from '../theme';
 
@@ -58,12 +58,8 @@ export function TrailCard({ trail, onPress, distance }: TrailCardProps) {
                         </Text>
                     )}
                 </View>
-                <View style={styles.imageContainer}>
-                    <Image
-                        source={{ uri: trail.imageUrl }}
-                        style={styles.image}
-                        resizeMode="cover"
-                    />
+                <View style={styles.iconPill}>
+                    <Text style={styles.iconText}>🥾</Text>
                 </View>
             </View>
         </Card>
@@ -73,9 +69,11 @@ export function TrailCard({ trail, onPress, distance }: TrailCardProps) {
 const styles = StyleSheet.create({
     card: {
         marginBottom: spacing.md,
+        backgroundColor: colors.surface,
     },
     content: {
         flexDirection: 'row',
+        alignItems: 'center',
     },
     info: {
         flex: 1,
@@ -111,14 +109,17 @@ const styles = StyleSheet.create({
         marginTop: spacing.sm,
         color: colors.accent,
     },
-    imageContainer: {
-        width: 80,
-        height: 80,
-        borderRadius: borderRadius.sm,
-        overflow: 'hidden',
+    iconPill: {
+        width: 56,
+        height: 56,
+        borderRadius: 16,
+        backgroundColor: colors.card,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: colors.border,
     },
-    image: {
-        width: '100%',
-        height: '100%',
+    iconText: {
+        fontSize: 24,
     },
 });

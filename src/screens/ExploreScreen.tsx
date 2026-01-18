@@ -137,6 +137,15 @@ export function ExploreScreen({ navigation }: ExploreScreenProps) {
 
     const renderHeader = () => (
         <>
+            <View style={styles.topBar}>
+                <View>
+                    <Text style={styles.screenTitle}>Explore Trails</Text>
+                    <Text style={styles.screenSubtitle}>
+                        {filteredTrails.length} trails available near you
+                    </Text>
+                </View>
+            </View>
+
             {/* Location Status */}
             {isLoadingLocation ? (
                 <View style={styles.locationBanner}>
@@ -182,28 +191,41 @@ export function ExploreScreen({ navigation }: ExploreScreenProps) {
                         </TouchableOpacity>
                     )}
                 </View>
+            </View>
 
+            {/* Filters */}
+            <View style={styles.filterRow}>
                 <TouchableOpacity
                     style={[
-                        styles.nearMeButton,
-                        nearMeFilter && styles.nearMeButtonActive,
+                        styles.filterPill,
+                        nearMeFilter && styles.filterPillActive,
+                        styles.filterPillPrimary,
                     ]}
                     onPress={() => setNearMeFilter(!nearMeFilter)}
                 >
-                    <Text style={styles.nearMeIcon}>📍</Text>
                     <Text style={[
-                        styles.nearMeText,
-                        nearMeFilter && styles.nearMeTextActive,
+                        styles.filterText,
+                        nearMeFilter && styles.filterTextActivePrimary,
                     ]}>
                         Near me
                     </Text>
                 </TouchableOpacity>
+                {['Easy', 'Moderate', 'Hard'].map(level => (
+                    <View
+                        key={level}
+                        style={[
+                            styles.filterPill,
+                            styles.difficultyPill,
+                        ]}
+                    >
+                        <Text style={styles.filterText}>{level}</Text>
+                    </View>
+                ))}
             </View>
 
-            {/* Google Trails Section */}
             {googleTrails.length > 0 && (
                 <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>DISCOVERED NEARBY</Text>
+                    <Text style={styles.sectionTitle}>Discovered nearby</Text>
                     <Text style={styles.sectionSubtitle}>{googleTrails.length} trails via Google</Text>
                 </View>
             )}
@@ -263,6 +285,19 @@ const styles = StyleSheet.create({
         ...typography.bodySmall,
         marginTop: spacing.xs,
     },
+    topBar: {
+        paddingHorizontal: spacing.lg,
+        paddingTop: spacing.md,
+        paddingBottom: spacing.sm,
+    },
+    screenTitle: {
+        ...typography.h1,
+    },
+    screenSubtitle: {
+        ...typography.bodySmall,
+        color: colors.textSecondary,
+        marginTop: spacing.xs,
+    },
     locationBanner: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -292,13 +327,13 @@ const styles = StyleSheet.create({
     },
     searchContainer: {
         paddingHorizontal: spacing.lg,
-        paddingBottom: spacing.md,
+        paddingBottom: spacing.sm,
     },
     searchInputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: colors.surface,
-        borderRadius: borderRadius.md,
+        borderRadius: borderRadius.lg,
         paddingHorizontal: spacing.md,
         marginBottom: spacing.sm,
         borderWidth: 1,
@@ -319,39 +354,43 @@ const styles = StyleSheet.create({
         fontSize: 16,
         padding: spacing.xs,
     },
-    nearMeButton: {
+    filterRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        alignSelf: 'flex-start',
+        gap: spacing.sm,
+        paddingHorizontal: spacing.lg,
+        marginBottom: spacing.md,
+    },
+    filterPill: {
         paddingVertical: spacing.sm,
         paddingHorizontal: spacing.md,
-        backgroundColor: colors.surface,
-        borderRadius: borderRadius.md,
+        borderRadius: 999,
         borderWidth: 1,
         borderColor: colors.border,
+        backgroundColor: colors.surface,
     },
-    nearMeButtonActive: {
-        backgroundColor: colors.accent + '20',
+    filterPillActive: {
         borderColor: colors.accent,
+        backgroundColor: colors.accent + '20',
     },
-    nearMeIcon: {
-        fontSize: 14,
-        marginRight: spacing.xs,
-    },
-    nearMeText: {
+    filterPillPrimary: {},
+    difficultyPill: {},
+    filterText: {
+        ...typography.bodySmall,
         color: colors.textSecondary,
-        fontWeight: '500',
     },
-    nearMeTextActive: {
+    filterTextActivePrimary: {
         color: colors.accent,
+        fontWeight: '600',
     },
     sectionHeader: {
         paddingHorizontal: spacing.lg,
         marginBottom: spacing.md,
     },
     sectionTitle: {
-        ...typography.caption,
+        ...typography.body,
         color: colors.accent,
+        fontWeight: '700',
     },
     sectionSubtitle: {
         ...typography.bodySmall,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
     View,
     Text,
@@ -10,16 +10,21 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RouteProp } from '@react-navigation/native';
+import { RouteProp, useFocusEffect } from '@react-navigation/native';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
-import { Input } from '../components/Input';
 import { SafetyCard } from '../components/SafetyCard';
+import { Input } from '../components/Input';
 import { Trail } from '../components/TrailCard';
+import { TrailMap } from '../components/TrailMap';
 import { colors, spacing, typography, borderRadius } from '../theme';
-import { useCheckIn } from '../hooks/useCheckIn';
 import { useDemoMode } from '../context/DemoModeContext';
-import { CheckInData } from '../utils/storage';
+import { useUserLocation } from '../context/LocationContext';
+import { getWalkingRoute } from '../services/googleRoutes';
+import { getWeather } from '../services/weather';
+import { useCheckIn } from '../hooks/useCheckIn';
+import { getRecentHazardCount } from '../services/hazards';
+import { fetchSafetyScoreFromAI } from '../services/safetyAi';
 import {
     getWeatherCondition,
     getWeatherEmoji,
@@ -31,7 +36,6 @@ import {
     getSafetyScoreColor,
     getSafetyScoreLabel,
 } from '../utils/safety';
-import trailsData from '../data/trails.json';
 
 type RootStackParamList = {
     Login: undefined;
@@ -53,21 +57,37 @@ const difficultyColors = {
 
 export function TrailScreen({ navigation, route }: TrailScreenProps) {
     const { trail } = route.params;
+    const { userLocation } = useUserLocation();
 
+    const [routeLine, setRouteLine] = useState<{ latitude: number; longitude: number }[]>([]);
+    const [routeDistance, setRouteDistance] = useState<number | null>(null);
+    const [routeDuration, setRouteDuration] = useState<number | null>(null);
     const [checkInModalVisible, setCheckInModalVisible] = useState(false);
     const [contactName, setContactName] = useState('');
     const [contactInfo, setContactInfo] = useState('');
     const [expectedHours, setExpectedHours] = useState('2');
+    const [weatherState, setWeatherState] = useState<{
+        condition: string | null;
+        sunrise: Date | null;
+        sunset: Date | null;
+    }>({
+        condition: null,
+        sunrise: null,
+        sunset: null,
+    });
+    const [hazardCount, setHazardCount] = useState<number>(0);
+    const [aiSafetyScore, setAiSafetyScore] = useState<number | null>(null);
+    const [aiSafetyLabel, setAiSafetyLabel] = useState<string | null>(null);
 
-    const { status, saveCheckIn, clearCheckIn, simulateOverdue } = useCheckIn();
     const { getCurrentTime, demoMode, fastForwardTime } = useDemoMode();
+    const { status, saveCheckIn, clearCheckIn, simulateOverdue } = useCheckIn();
 
     // Generate safety data based on trail
     const safetyData = useMemo(() => {
         const now = getCurrentTime();
         const seed = parseInt(trail.id, 10) || 1;
-        const weather = getWeatherCondition(seed);
-        const sunset = getSunsetTime(now);
+        const weather = (weatherState.condition as any) || getWeatherCondition(seed);
+        const sunset = weatherState.sunset || getSunsetTime(now);
         const hoursUntilSunset = (sunset.getTime() - now.getTime()) / (1000 * 60 * 60);
         const busyness = getBusyness(seed + 1);
 
@@ -80,7 +100,7 @@ export function TrailScreen({ navigation, route }: TrailScreenProps) {
         });
 
         return { weather, sunset, hoursUntilSunset, busyness, score };
-    }, [trail, getCurrentTime]);
+    }, [trail, getCurrentTime, weatherState]);
 
     const handleSetCheckIn = async () => {
         if (!contactName.trim() || !contactInfo.trim()) {
@@ -91,17 +111,19 @@ export function TrailScreen({ navigation, route }: TrailScreenProps) {
         const hours = parseFloat(expectedHours) || 2;
         const expectedReturnTime = Date.now() + hours * 60 * 60 * 1000;
 
-        const checkInData: CheckInData = {
+        await saveCheckIn({
             contactName: contactName.trim(),
             contactInfo: contactInfo.trim(),
             expectedReturnTime,
             trailId: trail.id,
             startTime: Date.now(),
-        };
+        });
 
-        await saveCheckIn(checkInData);
         setCheckInModalVisible(false);
-        Alert.alert('Check-in Set', `Your contact will be notified if you're not back by ${new Date(expectedReturnTime).toLocaleTimeString()}`);
+        Alert.alert(
+            'Check-in Set',
+            `Your contact will be notified if you're not back by ${new Date(expectedReturnTime).toLocaleTimeString()}`
+        );
     };
 
     const handleClearCheckIn = () => {
@@ -114,6 +136,58 @@ export function TrailScreen({ navigation, route }: TrailScreenProps) {
             ]
         );
     };
+
+    const fetchData = useCallback(async () => {
+        if (userLocation) {
+            const routeData = await getWalkingRoute(
+                { latitude: userLocation.latitude, longitude: userLocation.longitude },
+                { latitude: trail.lat, longitude: trail.lng }
+            );
+            if (routeData?.coordinates?.length) {
+                setRouteLine(routeData.coordinates);
+                setRouteDistance(routeData.distanceKm);
+                setRouteDuration(routeData.durationMin);
+            }
+        }
+
+        const weather = await getWeather(trail.lat, trail.lng);
+        if (weather) {
+            setWeatherState({
+                condition: weather.condition,
+                sunrise: weather.sunrise,
+                sunset: weather.sunset,
+            });
+        }
+
+        const count = await getRecentHazardCount(trail.id);
+        setHazardCount(count);
+
+        // AI safety score via OpenRouter (fallback to local if missing/failed)
+        try {
+            const sunsetTime = weather?.sunset || weatherState.sunset || safetyData.sunset;
+            const hoursUntilSunset = sunsetTime
+                ? Math.max(0, (sunsetTime.getTime() - Date.now()) / (1000 * 60 * 60))
+                : safetyData.hoursUntilSunset;
+
+            const ai = await fetchSafetyScoreFromAI({
+                locationName: trail.name,
+                difficulty: trail.difficulty,
+                distanceKm: trail.distanceKm,
+                hazardsLast48h: count,
+                hoursUntilSunset,
+                weather: weather?.condition || weatherState.condition || (safetyData.weather as string),
+            });
+            setAiSafetyScore(ai.score);
+            setAiSafetyLabel(ai.label);
+        } catch (error) {
+            setAiSafetyScore(safetyData.score);
+            setAiSafetyLabel(getSafetyScoreLabel(safetyData.score));
+        }
+    }, [userLocation, trail, safetyData, weatherState]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     if (!trail) {
         return (
@@ -155,6 +229,25 @@ export function TrailScreen({ navigation, route }: TrailScreenProps) {
                         <Text style={styles.metaText}>↑ {trail.elevation}m</Text>
                     </View>
                     <Text style={styles.description}>{trail.description}</Text>
+                    {(routeDistance !== null || routeDuration !== null) && (
+                        <Text style={styles.routeMeta}>
+                            {routeDistance !== null && `${routeDistance.toFixed(1)} km from you`}
+                            {routeDistance !== null && routeDuration !== null ? ' · ' : ''}
+                            {routeDuration !== null && `${routeDuration} min walk`}
+                        </Text>
+                    )}
+                </View>
+
+                <View style={styles.mapCard}>
+                    <TrailMap
+                        trail={trail}
+                        breadcrumbs={[]}
+                        showUserLocation
+                        isTracking={false}
+                        mapType="terrain"
+                        showTrailhead
+                        routeLine={routeLine}
+                    />
                 </View>
 
                 {/* Safety Cards */}
@@ -174,17 +267,18 @@ export function TrailScreen({ navigation, route }: TrailScreenProps) {
                     </View>
                     <View style={styles.safetyGrid}>
                         <SafetyCard
-                            icon="👥"
-                            title="BUSYNESS"
-                            value={safetyData.busyness}
-                            valueColor={getBusynessColor(safetyData.busyness)}
+                            icon="⚠️"
+                            title="HAZARDS (48h)"
+                            value={`${hazardCount}`}
+                            valueColor={hazardCount > 0 ? colors.danger : colors.success}
+                            subtitle={hazardCount > 0 ? 'Reported recently' : 'No recent reports'}
                         />
                         <SafetyCard
                             icon="🛡️"
                             title="SAFETY SCORE"
-                            value={`${safetyData.score}/10`}
-                            valueColor={getSafetyScoreColor(safetyData.score)}
-                            subtitle={getSafetyScoreLabel(safetyData.score)}
+                            value={`${(aiSafetyScore ?? safetyData.score).toFixed(1)}/10`}
+                            valueColor={getSafetyScoreColor(aiSafetyScore ?? safetyData.score)}
+                            subtitle={aiSafetyLabel || getSafetyScoreLabel(safetyData.score)}
                         />
                     </View>
                 </View>
@@ -370,6 +464,19 @@ const styles = StyleSheet.create({
         ...typography.body,
         color: colors.textSecondary,
         lineHeight: 24,
+    },
+    routeMeta: {
+        ...typography.bodySmall,
+        color: colors.textSecondary,
+        marginTop: spacing.sm,
+    },
+    mapCard: {
+        marginHorizontal: spacing.lg,
+        marginBottom: spacing.lg,
+        borderRadius: borderRadius.lg,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: colors.border,
     },
     section: {
         paddingHorizontal: spacing.lg,

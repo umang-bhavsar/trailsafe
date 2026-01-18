@@ -28,6 +28,7 @@ interface TrailMapProps {
     mapType?: MapType;
     showTrailhead?: boolean;
     centerOnUser?: boolean;
+    routeLine?: LatLng[];
 }
 
 export function TrailMap({
@@ -39,6 +40,7 @@ export function TrailMap({
     mapType = 'terrain',
     showTrailhead = true,
     centerOnUser = false,
+    routeLine = [],
 }: TrailMapProps) {
     const mapRef = useRef<MapView>(null);
     const [isMapReady, setIsMapReady] = useState(false);
@@ -144,6 +146,16 @@ export function TrailMap({
                 loadingIndicatorColor={colors.accent}
                 loadingBackgroundColor={colors.background}
             >
+                {/* Suggested route line */}
+                {routeLine.length > 1 && (
+                    <Polyline
+                        coordinates={routeLine}
+                        strokeColor={colors.accentDark}
+                        strokeWidth={config.map.polylineWidth}
+                        lineDashPattern={[10, 6]}
+                    />
+                )}
+
                 {/* Trail Polyline */}
                 {polylineCoordinates.length > 0 && (
                     <Polyline

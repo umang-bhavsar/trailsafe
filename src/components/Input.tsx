@@ -2,10 +2,12 @@ import React from 'react';
 import { View, TextInput, Text, StyleSheet, ViewStyle, TextInputProps } from 'react-native';
 import { colors, borderRadius, spacing, typography } from '../theme';
 
+
 interface InputProps extends TextInputProps {
     label?: string;
     error?: string;
     containerStyle?: ViewStyle;
+    leftIcon?: React.ReactNode;
 }
 
 export function Input({
@@ -13,20 +15,26 @@ export function Input({
     error,
     containerStyle,
     style,
+    leftIcon,
     ...props
 }: InputProps) {
     return (
         <View style={[styles.container, containerStyle]}>
             {label && <Text style={styles.label}>{label}</Text>}
-            <TextInput
-                style={[
-                    styles.input,
-                    error && styles.inputError,
-                    style,
-                ]}
-                placeholderTextColor={colors.textSecondary}
-                {...props}
-            />
+            <View style={[
+                styles.inputWrapper,
+                error && styles.inputError,
+            ]}>
+                {leftIcon && <View style={styles.icon}>{leftIcon}</View>}
+                <TextInput
+                    style={[
+                        styles.input,
+                        style,
+                    ]}
+                    placeholderTextColor={colors.textSecondary}
+                    {...props}
+                />
+            </View>
             {error && <Text style={styles.error}>{error}</Text>}
         </View>
     );
@@ -42,18 +50,26 @@ const styles = StyleSheet.create({
         marginBottom: spacing.xs,
         fontWeight: '500',
     },
-    input: {
+    inputWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
         backgroundColor: colors.surface,
         borderRadius: borderRadius.md,
-        paddingVertical: spacing.md,
         paddingHorizontal: spacing.md,
-        color: colors.textPrimary,
-        fontSize: 16,
         borderWidth: 1,
         borderColor: colors.border,
     },
+    input: {
+        flex: 1,
+        paddingVertical: spacing.md,
+        color: colors.textPrimary,
+        fontSize: 16,
+    },
     inputError: {
         borderColor: colors.danger,
+    },
+    icon: {
+        marginRight: spacing.sm,
     },
     error: {
         color: colors.danger,
