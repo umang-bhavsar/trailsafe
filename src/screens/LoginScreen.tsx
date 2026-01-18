@@ -11,7 +11,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { colors, spacing, typography } from '../theme';
-import { setItem, StorageKeys } from '../utils/storage';
+import { supabase } from '../services/supabase';
 
 type RootStackParamList = {
     Login: undefined;
@@ -28,16 +28,42 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [info, setInfo] = useState('');
 
     const handleSignIn = async () => {
         setLoading(true);
-        // Demo login - just save isLoggedIn and navigate
-        await setItem(StorageKeys.IS_LOGGED_IN, true);
-        setLoading(false);
-        navigation.reset({
-            index: 0,
-            routes: [{ name: 'Explore' }],
+        setError('');
+        setInfo('');
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: email.trim(),
+            password,
         });
+        setLoading(false);
+
+        if (signInError) {
+            setError(signInError.message);
+        }
+    };
+
+    const handleSignUp = async () => {
+        setLoading(true);
+        setError('');
+        setInfo('');
+        const { data, error: signUpError } = await supabase.auth.signUp({
+            email: email.trim(),
+            password,
+        });
+        setLoading(false);
+
+        if (signUpError) {
+            setError(signUpError.message);
+            return;
+        }
+
+        if (data.user && !data.session) {
+            setInfo('Check your email to confirm your account.');
+        }
     };
 
     return (
@@ -79,9 +105,17 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
                             style={styles.signInButton}
                         />
 
-                        <Text style={styles.demoNote}>
-                            Demo mode: Just tap Sign In to continue
-                        </Text>
+                        <Button
+                            title="Create Account"
+                            onPress={handleSignUp}
+                            loading={loading}
+                            size="large"
+                            variant="secondary"
+                            style={styles.signUpButton}
+                        />
+
+                        {!!error && <Text style={styles.errorText}>{error}</Text>}
+                        {!!info && <Text style={styles.infoText}>{info}</Text>}
                     </View>
                 </View>
             </KeyboardAvoidingView>
@@ -126,10 +160,19 @@ const styles = StyleSheet.create({
     signInButton: {
         marginTop: spacing.md,
     },
-    demoNote: {
+    signUpButton: {
+        marginTop: spacing.sm,
+    },
+    errorText: {
         ...typography.bodySmall,
         textAlign: 'center',
-        marginTop: spacing.lg,
+        marginTop: spacing.md,
+        color: colors.danger,
+    },
+    infoText: {
+        ...typography.bodySmall,
+        textAlign: 'center',
+        marginTop: spacing.sm,
         color: colors.textSecondary,
     },
 });

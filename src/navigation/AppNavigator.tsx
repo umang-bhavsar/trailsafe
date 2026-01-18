@@ -7,9 +7,10 @@ import { ExploreScreen } from '../screens/ExploreScreen';
 import { TrailScreen } from '../screens/TrailScreen';
 import { HikeScreen } from '../screens/HikeScreen';
 import { useDemoMode } from '../context/DemoModeContext';
-import { getItem, StorageKeys, removeItem } from '../utils/storage';
 import { colors, spacing } from '../theme';
 import { Trail } from '../components/TrailCard';
+import { supabase } from '../services/supabase';
+import { Session } from '@supabase/supabase-js';
 
 export type RootStackParamList = {
     Login: undefined;
@@ -58,22 +59,34 @@ function LogoutButton({ onLogout }: { onLogout: () => void }) {
 }
 
 export function AppNavigator() {
-    const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+    const [session, setSession] = useState<Session | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        checkAuthStatus();
+        let isMounted = true;
+
+        supabase.auth.getSession().then(({ data }) => {
+            if (!isMounted) return;
+            setSession(data.session);
+            setIsLoading(false);
+        });
+
+        const { data: authListener } = supabase.auth.onAuthStateChange(
+            (_event, newSession) => {
+                if (!isMounted) return;
+                setSession(newSession);
+                setIsLoading(false);
+            }
+        );
+
+        return () => {
+            isMounted = false;
+            authListener.subscription.unsubscribe();
+        };
     }, []);
 
-    const checkAuthStatus = async () => {
-        const loggedIn = await getItem<boolean>(StorageKeys.IS_LOGGED_IN);
-        setIsLoggedIn(loggedIn === true);
-        setIsLoading(false);
-    };
-
     const handleLogout = async () => {
-        await removeItem(StorageKeys.IS_LOGGED_IN);
-        setIsLoggedIn(false);
+        await supabase.auth.signOut();
     };
 
     if (isLoading) {
@@ -94,14 +107,11 @@ export function AppNavigator() {
                     headerShadowVisible: false,
                 }}
             >
-                {!isLoggedIn ? (
+                {!session ? (
                     <Stack.Screen
                         name="Login"
                         component={LoginScreen}
                         options={{ headerShown: false }}
-                        listeners={{
-                            focus: () => checkAuthStatus(),
-                        }}
                     />
                 ) : (
                     <>
@@ -116,9 +126,6 @@ export function AppNavigator() {
                                         <LogoutButton onLogout={handleLogout} />
                                     </View>
                                 ),
-                            }}
-                            listeners={{
-                                focus: () => checkAuthStatus(),
                             }}
                         />
                         <Stack.Screen
