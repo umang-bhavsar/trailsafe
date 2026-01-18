@@ -1,0 +1,222 @@
+[
+  {
+    "id": "1",
+    "name": "Eagle Peak Summit",
+    "difficulty": "Hard",
+    "lat": 37.7749,
+    "lng": -122.4194,
+    "distanceKm": 12.5,
+    "elevation": 1450,
+    "description": "A challenging ascent to panoramic views of the Bay Area. Rocky terrain with steep sections.",
+    "imageUrl": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800"
+  },
+  {
+    "id": "2",
+    "name": "Redwood Loop Trail",
+    "difficulty": "Easy",
+    "lat": 37.8044,
+    "lng": -122.2712,
+    "distanceKm": 4.2,
+    "elevation": 180,
+    "description": "A serene walk through ancient redwood groves. Perfect for beginners and families.",
+    "imageUrl": "https://images.unsplash.com/photo-1448375240586-882707db888b?w=800"
+  },
+  {
+    "id": "3",
+    "name": "Coastal Bluff Path",
+    "difficulty": "Moderate",
+    "lat": 37.8267,
+    "lng": -122.4230,
+    "distanceKm": 8.3,
+    "elevation": 320,
+    "description": "Stunning ocean views along dramatic cliffs. Watch for sea lions and migrating whales.",
+    "imageUrl": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800"
+  },
+  {
+    "id": "4",
+    "name": "Mount Diablo Fire Trail",
+    "difficulty": "Hard",
+    "lat": 37.8816,
+    "lng": -121.9142,
+    "distanceKm": 15.8,
+    "elevation": 1173,
+    "description": "Intense climb with 360-degree views from the summit. Exposed terrain, bring sun protection.",
+    "imageUrl": "https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?w=800"
+  },
+  {
+    "id": "5",
+    "name": "Muir Woods Cathedral Grove",
+    "difficulty": "Easy",
+    "lat": 37.8970,
+    "lng": -122.5811,
+    "distanceKm": 2.1,
+    "elevation": 60,
+    "description": "Walk among the tallest trees on Earth. Boardwalk path suitable for all skill levels.",
+    "imageUrl": "https://images.unsplash.com/photo-1476231682828-37e571bc172f?w=800"
+  },
+  {
+    "id": "6",
+    "name": "Steep Ravine Trail",
+    "difficulty": "Moderate",
+    "lat": 37.8697,
+    "lng": -122.5933,
+    "distanceKm": 6.7,
+    "elevation": 410,
+    "description": "Dramatic descent through a narrow canyon with ladders and bridges. Creek crossings required.",
+    "imageUrl": "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800"
+  },
+  {
+    "id": "7",
+    "name": "Tilden Wildcat Peak",
+    "difficulty": "Moderate",
+    "lat": 37.9055,
+    "lng": -122.2477,
+    "distanceKm": 5.4,
+    "elevation": 280,
+    "description": "Popular East Bay hike with wildflowers in spring. Great for trail running.",
+    "imageUrl": "https://images.unsplash.com/photo-1501555088652-021faa106b9b?w=800"
+  },
+  {
+    "id": "8",
+    "name": "Angel Island Perimeter",
+    "difficulty": "Moderate",
+    "lat": 37.8609,
+    "lng": -122.4325,
+    "distanceKm": 9.2,
+    "elevation": 240,
+    "description": "Circle the island with views of San Francisco, Alcatraz, and the Golden Gate Bridge.",
+    "imageUrl": "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800"
+  },
+  {
+    "id": "9",
+    "name": "Mission Peak",
+    "difficulty": "Hard",
+    "lat": 37.5126,
+    "lng": -121.8807,
+    "distanceKm": 10.2,
+    "elevation": 670,
+    "description": "Iconic Bay Area challenge. Steep climb to the famous pole at the summit.",
+    "imageUrl": "https://images.unsplash.com/photo-1551632811-561732d1e306?w=800"
+  },
+  {
+    "id": "10",
+    "name": "Lands End Trail",
+    "difficulty": "Easy",
+    "lat": 37.7879,
+    "lng": -122.5089,
+    "distanceKm": 5.6,
+    "elevation": 120,
+    "description": "Urban escape with Golden Gate views, hidden beaches, and historic Sutro Baths ruins.",
+    "imageUrl": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800"
+  },
+  {
+    "id": "11",
+    "name": "Point Reyes Chimney Rock",
+    "difficulty": "Moderate",
+    "lat": 38.0002,
+    "lng": -122.9674,
+    "distanceKm": 7.8,
+    "elevation": 190,
+    "description": "Windswept coastal trail perfect for whale watching. Elephant seals in season.",
+    "imageUrl": "https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=800"
+  },
+  {
+    "id": "12",
+    "name": "Marin Headlands Rodeo Valley",
+    "difficulty": "Easy",
+    "lat": 37.8324,
+    "lng": -122.5298,
+    "distanceKm": 3.8,
+    "elevation": 85,
+    "description": "Gentle loop through historic military bunkers with Bay views. Dog-friendly.",
+    "imageUrl": "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800"
+  },
+  {
+    "id": "13",
+    "name": "Sunol Ohlone Wilderness",
+    "difficulty": "Hard",
+    "lat": 37.5142,
+    "lng": -121.8315,
+    "distanceKm": 18.4,
+    "elevation": 920,
+    "description": "Remote backcountry experience. Multi-day backpacking opportunities available.",
+    "imageUrl": "https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=800"
+  },
+  {
+    "id": "14",
+    "name": "Tennessee Valley Beach",
+    "difficulty": "Easy",
+    "lat": 37.8578,
+    "lng": -122.5389,
+    "distanceKm": 3.4,
+    "elevation": 45,
+    "description": "Family-friendly trail to a secluded beach. Great for sunset hikes.",
+    "imageUrl": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800"
+  },
+  {
+    "id": "15",
+    "name": "Dipsea Trail",
+    "difficulty": "Hard",
+    "lat": 37.8964,
+    "lng": -122.5219,
+    "distanceKm": 11.3,
+    "elevation": 580,
+    "description": "Historic race route from Mill Valley to Stinson Beach. Hundreds of stairs included.",
+    "imageUrl": "https://images.unsplash.com/photo-1551632811-561732d1e306?w=800"
+  },
+  {
+    "id": "16",
+    "name": "Cataract Falls Loop",
+    "difficulty": "Moderate",
+    "lat": 37.9311,
+    "lng": -122.6205,
+    "distanceKm": 4.9,
+    "elevation": 340,
+    "description": "Beautiful waterfall trail best after winter rains. Slippery when wet.",
+    "imageUrl": "https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=800"
+  },
+  {
+    "id": "17",
+    "name": "Purisima Creek Redwoods",
+    "difficulty": "Moderate",
+    "lat": 37.4342,
+    "lng": -122.3517,
+    "distanceKm": 8.6,
+    "elevation": 520,
+    "description": "Shaded redwood forest on the Peninsula. Loop options for all abilities.",
+    "imageUrl": "https://images.unsplash.com/photo-1448375240586-882707db888b?w=800"
+  },
+  {
+    "id": "18",
+    "name": "Black Diamond Mines",
+    "difficulty": "Moderate",
+    "lat": 37.9573,
+    "lng": -121.8612,
+    "distanceKm": 7.2,
+    "elevation": 380,
+    "description": "Explore historic coal mining tunnels and rolling grasslands. Hot in summer.",
+    "imageUrl": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800"
+  },
+  {
+    "id": "19",
+    "name": "Almaden Quicksilver",
+    "difficulty": "Hard",
+    "lat": 37.1751,
+    "lng": -121.8447,
+    "distanceKm": 14.2,
+    "elevation": 710,
+    "description": "Former mercury mining site with extensive trail network. Wildlife abundant.",
+    "imageUrl": "https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?w=800"
+  },
+  {
+    "id": "20",
+    "name": "Briones Peak Trail",
+    "difficulty": "Moderate",
+    "lat": 37.9324,
+    "lng": -122.1421,
+    "distanceKm": 6.8,
+    "elevation": 290,
+    "description": "East Bay hilltop with sweeping views. Green and lush in spring, golden in summer.",
+    "imageUrl": "https://images.unsplash.com/photo-1501555088652-021faa106b9b?w=800"
+  }
+]
