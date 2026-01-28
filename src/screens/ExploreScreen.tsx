@@ -176,19 +176,19 @@ export function ExploreScreen({ navigation }: ExploreScreenProps) {
             ) : null}
 
             {/* Search Bar */}
-            <View style={styles.searchInputContainer}>
-                <TextInput
-                    style={styles.searchInput}
-                    placeholder="Search trails..."
-                    placeholderTextColor={colors.textSecondary}
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                />
-                {searchQuery.length > 0 && (
-                    <TouchableOpacity onPress={() => setSearchQuery('')}>
-                        <Text style={styles.clearIcon}>✕</Text>
-                    </TouchableOpacity>
-                )}
+                <View style={styles.searchInputContainer}>
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder="Search trails..."
+                        placeholderTextColor={colors.textSecondary}
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                    />
+                    {searchQuery.length > 0 && (
+                        <TouchableOpacity onPress={() => setSearchQuery('')}>
+                            <Text style={styles.clearIcon}>✕</Text>
+                        </TouchableOpacity>
+                    )}
             </View>
 
             {/* Filters */}

@@ -57,6 +57,9 @@ export default {
         extra: {
             googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
             apiBaseUrl: process.env.API_BASE_URL,
+            eas: {
+                projectId: "66427cd6-3ffe-4827-b39a-c6489d5b49f8"
+            }
         }
     }
 };
