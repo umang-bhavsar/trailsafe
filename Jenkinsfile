@@ -58,16 +58,6 @@ pipeline {
             }
         }
 
-        stage('EAS Build - iOS') {
-            steps {
-                sh '''
-                    export NVM_DIR="$HOME/.nvm"
-                    [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-                    nvm use ${NODE_VERSION}
-                    npx eas-cli build --platform ios --profile preview --non-interactive
-                '''
-            }
-        }
     }
 
     post {
